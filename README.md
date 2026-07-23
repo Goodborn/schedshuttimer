@@ -11,7 +11,7 @@ A heavily animated shutdown timer for Linux with a premium dark UI. Set a countd
 
 ## Screenshots
 
-<!-- Add screenshots here once available -->
+![Screenshot](Screenshot.png)
 
 ## Installation
 
