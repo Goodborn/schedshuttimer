@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.github.goodborn.ShutdownTimer</id>
+  <name>Shutdown Timer</name>
+  <summary>Heavily animated shutdown timer for Linux</summary>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <description>
+    <p>
+      Shutdown Timer is a sleek, heavily animated desktop application that lets you
+      schedule your PC shutdown with a beautiful circular countdown display.
+    </p>
+    <p>Features:</p>
+    <ul>
+      <li>Countdown mode with hours, minutes, seconds</li>
+      <li>Schedule mode to shut down at a specific time</li>
+      <li>Beautiful animated circular progress ring</li>
+      <li>System tray integration</li>
+      <li>Desktop Environment agnostic — works on Hyprland, KDE, GNOME, and more</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">shutdown-timer.desktop</launchable>
+  <url type="homepage">https://github.com/goodborn/ShutdownTimer</url>
+  <url type="bugtracker">https://github.com/goodborn/ShutdownTimer/issues</url>
+  <developer id="com.github.goodborn">
+    <name>goodborn</name>
+  </developer>
+  <categories>
+    <category>System</category>
+    <category>Utility</category>
+  </categories>
+  <keywords>
+    <keyword>shutdown</keyword>
+    <keyword>timer</keyword>
+    <keyword>power</keyword>
+    <keyword>scheduler</keyword>
+  </keywords>
+  <releases>
+    <release version="1.0.0" date="2025-01-01">
+      <description>
+        <p>Initial release.</p>
+      </description>
+    </release>
+  </releases>
+  <content_rating type="oars-1.1">
+    <content_attribute id="violence-fantasy">none</content_attribute>
+    <content_attribute id="drugs-alcohol">none</content_attribute>
+    <content_attribute id="sex-nudity">none</content_attribute>
+  </content_rating>
+</component>

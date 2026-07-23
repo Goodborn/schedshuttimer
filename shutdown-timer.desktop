@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Shutdown Timer
+GenericName=Shutdown Timer
+Comment=Animated shutdown timer for Linux
+Exec=shutdown-timer
+Icon=shutdown-timer
+Terminal=false
+Categories=System;Utility;
+Keywords=shutdown;timer;power;off;
+StartupNotify=true
