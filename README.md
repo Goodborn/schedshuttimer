@@ -6,10 +6,6 @@ A heavily animated shutdown timer for Linux with a premium dark UI. Set a countd
 
 - **Countdown mode** — set hours, minutes, seconds with quick presets (5m, 15m, 30m, 1h)
 - **Schedule mode** — pick a specific time for the system to shut down
-- **Animated ring** — circular progress indicator with color transitions (green → yellow → red), breathing glow, rotating tick marks, and orbital dots
-- **Live tick pulse** — the ring pulses every second as the timer counts down
-- **Warning state** — ring glows red and shakes when under 10 seconds
-- **Smooth animations** — fade transitions, bounce-in effects, mode crossfade, shimmer button, shake on shutdown
 - **System tray** — minimizes to tray with a custom icon and remaining time tooltip
 - **Dark theme** — rich gradient-based dark UI with pill-shaped mode tabs and glass-morphism container
 
@@ -73,13 +69,6 @@ SchedShutTimer uses the `org.freedesktop.login1` D-Bus interface to trigger a sy
 - dbus-python
 
 ## Building
-
-### Flatpak
-
-```bash
-flatpak-builder build-dir com.github.goodborn.ShutdownTimer.yml
-flatpak-builder --user --install build-dir com.github.goodborn.ShutdownTimer.yml
-```
 
 ### PKGBUILD (Arch Linux)
 
