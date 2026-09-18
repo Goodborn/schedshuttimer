@@ -13,7 +13,7 @@ from shutdown_timer.ui.ambient_background import AmbientBackground
 from shutdown_timer.animations import (
     slide_in_from_bottom, bounce_in, shake_window,
 )
-from shutdown_timer.shutdown import shutdown
+from shutdown_timer.shutdown import shutdown, is_available
 from shutdown_timer.style import COLORS
 
 # Grace period between the countdown hitting zero and the actual shutdown
@@ -31,6 +31,9 @@ class MainWindow(QMainWindow):
     tick_progress = pyqtSignal(int, int, bool)
     # Fired once, the instant the last-10-seconds warning state begins.
     warning_started = pyqtSignal(int)
+    # Fired when the countdown hit zero but no shutdown mechanism actually
+    # worked (unsupported/locked-down system) - the machine is NOT going down.
+    shutdown_failed = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -177,6 +180,16 @@ class MainWindow(QMainWindow):
         if total_seconds <= 0:
             return
 
+        if not is_available():
+            # Guardrail: warn now rather than let the user walk away from
+            # a multi-hour countdown that can never actually shut anything
+            # down (no systemd-logind/elogind D-Bus, no systemctl/shutdown/
+            # poweroff binary found anywhere on PATH).
+            self._fade_status_text("No shutdown method found on this system", COLORS["danger_1"])
+            a = shake_window(self.window(), 400)
+            self._anim_refs.append(a)
+            return
+
         self._total = total_seconds
         self._remaining = total_seconds
         # Wall-clock deadline rather than a pure tick-decrement: stays
@@ -244,8 +257,22 @@ class MainWindow(QMainWindow):
         self._pulse_anim.start()
 
     def _do_shutdown(self):
-        self.timer_finished.emit()
-        shutdown()
+        if shutdown():
+            self.timer_finished.emit()
+            return
+
+        # Every known shutdown mechanism failed - the machine is staying
+        # up, so unwind back to an idle state instead of leaving the UI
+        # stuck showing "Shutting down..." forever.
+        self._remaining = 0
+        self._deadline = None
+        self._warning_shown = False
+        self.timer_widget.reset()
+        self.title_bar.set_armed(False)
+        self._fade_status_text("Shutdown failed — check permissions/logs", COLORS["danger_1"])
+        a = shake_window(self.window(), 600)
+        self._anim_refs.append(a)
+        self.shutdown_failed.emit()
 
     def get_remaining(self) -> int:
         return self._remaining

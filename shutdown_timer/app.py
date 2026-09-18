@@ -192,10 +192,22 @@ def run() -> int:
             5000,
         )
 
+    def on_shutdown_failed():
+        reset_tray()
+        tray.showMessage(
+            "Shutdown Timer",
+            "Shutdown failed — no working shutdown method on this system. "
+            "The computer is still on.",
+            QSystemTrayIcon.MessageIcon.Critical,
+            8000,
+        )
+        restore_window()
+
     window.tick_progress.connect(on_tick_progress)
     window.timer_cancelled.connect(reset_tray)
     window.timer_finished.connect(reset_tray)
     window.warning_started.connect(on_warning_started)
+    window.shutdown_failed.connect(on_shutdown_failed)
 
     window.show()
 

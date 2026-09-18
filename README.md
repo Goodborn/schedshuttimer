@@ -1,6 +1,6 @@
 # SchedShutTimer
 
-A heavily animated shutdown timer for Linux with a premium dark UI. Set a countdown or schedule a shutdown time with smooth animations and live visual feedback.
+A simple shutdown scheduler for Linux, dressed up with a premium animated dark UI. Set a countdown or schedule a shutdown time with smooth animations and live visual feedback.
 
 ## Features
 
@@ -62,9 +62,19 @@ python -m shutdown_timer
 
 ## How it works
 
-SchedShutTimer triggers a system shutdown via the `org.freedesktop.login1` D-Bus interface when `dbus-python` is available, falling back to `systemctl poweroff` otherwise — either way, no password is required on an active desktop session. Your system must be using systemd-logind (default on modern Linux distributions including Arch, Fedora, Ubuntu, etc.).
+SchedShutTimer tries several shutdown mechanisms in order, from most to least graceful, and uses the first one that works:
 
-**DE-agnostic** — works on KDE, GNOME, Hyprland, Sway, XFCE, and any other Linux desktop.
+1. `org.freedesktop.login1` D-Bus (via `dbus-python`, if installed) — no password needed on an active desktop session
+2. Same D-Bus call via the `dbus-send` CLI, if `dbus-python` isn't available
+3. `systemctl poweroff`
+4. `shutdown -h now`
+5. `poweroff`
+
+The D-Bus path (1–2) covers systemd **and** non-systemd distros that ship `elogind`, which implements the same login1 API (Artix, Void, Alpine, Gentoo/OpenRC, …) — so it's not systemd-only. The command fallbacks (3–5) cover everything else, though without a login1-style D-Bus service they generally need root.
+
+**DE-agnostic** — works on KDE, GNOME, Hyprland, Sway, XFCE, and any other Linux desktop, since it talks to the OS, not the desktop environment.
+
+**Guardrails:** if no shutdown mechanism can be found at all, the app refuses to arm the timer and shows a warning immediately instead of counting down to nothing. If every mechanism fails when the countdown actually hits zero (e.g. permissions changed mid-countdown), the app aborts cleanly, restores itself from the tray, and shows an error — it never silently pretends to shut down.
 
 ## Dependencies
 
