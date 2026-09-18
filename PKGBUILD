@@ -10,7 +10,9 @@ depends=(
   'python'
   'python-pyqt6'
   'qt6-base'
-  'python-dbus'
+)
+optdepends=(
+  'python-dbus: shutdown via D-Bus instead of the systemctl fallback'
 )
 makedepends=(
   'python-build'

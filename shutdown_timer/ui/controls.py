@@ -1,11 +1,13 @@
-from PyQt6.QtCore import Qt, QTime, QPropertyAnimation, QEasingCurve, pyqtSignal, QRect
+from PyQt6.QtCore import Qt, QTime, QPropertyAnimation, QEasingCurve, pyqtSignal, QRect, QParallelAnimationGroup
 from PyQt6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, QLabel,
-    QPushButton, QSpinBox, QTimeEdit, QStackedWidget,
+    QPushButton, QSpinBox, QTimeEdit, QStackedWidget, QGraphicsOpacityEffect,
 )
 from PyQt6.QtGui import QFont
 
 from shutdown_timer.ui.shimmer_button import ShimmerButton, OpacityButton
+
+_MONO = "JetBrains Mono, Noto Sans Mono, DejaVu Sans Mono, Liberation Mono, monospace"
 
 
 class CountdownPanel(QWidget):
@@ -25,7 +27,7 @@ class CountdownPanel(QWidget):
         input_row = QHBoxLayout()
         input_row.setSpacing(8)
 
-        mono = QFont("Noto Sans Mono, DejaVu Sans Mono, Liberation Mono, monospace")
+        mono = QFont(_MONO)
         mono.setPointSize(14)
         mono.setBold(True)
 
@@ -149,7 +151,7 @@ class SchedulePanel(QWidget):
         header.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(header)
 
-        font = QFont("Noto Sans Mono, DejaVu Sans Mono, Liberation Mono, monospace")
+        font = QFont(_MONO)
         font.setPointSize(18)
         font.setBold(True)
 
@@ -267,14 +269,48 @@ class ControlsWidget(QWidget):
         if self.stack.currentIndex() == index:
             return
 
-        self.stack.setCurrentIndex(index)
         self.btn_countdown.setChecked(index == 0)
         self.btn_schedule.setChecked(index == 1)
+
+        direction = 1 if index == 1 else -1
+        outgoing = self.stack.currentWidget()
+        self.stack.setCurrentIndex(index)
+        incoming = self.stack.currentWidget()
+
+        self._crossfade(outgoing, incoming, direction)
 
         if index == 0:
             self._on_time_changed(self.countdown_panel.get_total_seconds())
         else:
             self._on_time_changed(self.schedule_panel.get_total_seconds())
+
+    def _crossfade(self, outgoing: QWidget, incoming: QWidget, direction: int):
+        distance = 24 * direction
+
+        in_effect = QGraphicsOpacityEffect(incoming)
+        incoming.setGraphicsEffect(in_effect)
+        in_effect.setOpacity(0.0)
+
+        base_geo = incoming.geometry()
+        incoming.setGeometry(base_geo.translated(distance, 0))
+
+        fade_in = QPropertyAnimation(in_effect, b"opacity")
+        fade_in.setDuration(280)
+        fade_in.setStartValue(0.0)
+        fade_in.setEndValue(1.0)
+        fade_in.setEasingCurve(QEasingCurve.Type.OutCubic)
+
+        slide_in = QPropertyAnimation(incoming, b"geometry")
+        slide_in.setDuration(280)
+        slide_in.setStartValue(base_geo.translated(distance, 0))
+        slide_in.setEndValue(base_geo)
+        slide_in.setEasingCurve(QEasingCurve.Type.OutCubic)
+
+        group = QParallelAnimationGroup(self)
+        group.addAnimation(fade_in)
+        group.addAnimation(slide_in)
+        group.start()
+        self._transition_anim = group
 
     def _on_time_changed(self, seconds: int):
         self._total_seconds = seconds

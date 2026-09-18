@@ -1,12 +1,9 @@
 from PyQt6.QtCore import (
     QPropertyAnimation,
     QSequentialAnimationGroup,
-    QParallelAnimationGroup,
     QPauseAnimation,
     QEasingCurve,
-    QPoint,
     QRect,
-    pyqtProperty,
 )
 from PyQt6.QtWidgets import QGraphicsOpacityEffect, QWidget
 

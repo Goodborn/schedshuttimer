@@ -15,13 +15,17 @@ A heavily animated shutdown timer for Linux with a premium dark UI. Set a countd
 
 ## Installation
 
-### From source
-
 ```bash
 git clone https://github.com/Goodborn/schedshuttimer.git
 cd schedshuttimer
-pip install .
+./install.sh
 ```
+
+Installs into a private virtual environment under `~/.local/share/shutdown-timer`,
+with the `shutdown-timer` command and an app-launcher shortcut added to your
+user account. No `sudo`, no system packages, nothing touches system
+directories — works the same on any distro with Python 3.10+. Run it again
+any time to pick up a `git pull`.
 
 ### Arch Linux (AUR)
 
@@ -58,15 +62,15 @@ python -m shutdown_timer
 
 ## How it works
 
-SchedShutTimer uses the `org.freedesktop.login1` D-Bus interface to trigger a system shutdown — no password required on an active desktop session. Your system must be using systemd-logind (default on modern Linux distributions including Arch, Fedora, Ubuntu, etc.).
+SchedShutTimer triggers a system shutdown via the `org.freedesktop.login1` D-Bus interface when `dbus-python` is available, falling back to `systemctl poweroff` otherwise — either way, no password is required on an active desktop session. Your system must be using systemd-logind (default on modern Linux distributions including Arch, Fedora, Ubuntu, etc.).
 
 **DE-agnostic** — works on KDE, GNOME, Hyprland, Sway, XFCE, and any other Linux desktop.
 
 ## Dependencies
 
 - Python 3.10+
-- PyQt6
-- dbus-python
+- PyQt6 (installed automatically by `install.sh` into its own venv)
+- dbus-python (optional — only needed for the D-Bus shutdown path instead of `systemctl`)
 
 ## Building
 

@@ -3,6 +3,11 @@ from PyQt6.QtCore import Qt, QSize, QRectF, pyqtProperty, QPropertyAnimation, QE
 from PyQt6.QtGui import QPainter, QColor, QPen, QFont, QRadialGradient, QConicalGradient
 from PyQt6.QtWidgets import QWidget, QSizePolicy
 
+from shutdown_timer.style import COLORS
+
+_ACCENT = QColor(COLORS["accent_1"])
+_ACCENT_RGB = (_ACCENT.red(), _ACCENT.green(), _ACCENT.blue())
+
 
 class CircularTimer(QWidget):
     def __init__(self, parent=None):
@@ -225,10 +230,10 @@ class CircularTimer(QWidget):
         inner = outer.adjusted(6, 6, -6, -6)
 
         bg_grad = QRadialGradient(cx, cy, radius)
-        bg_grad.setColorAt(0.0, QColor("#0f172a"))
-        bg_grad.setColorAt(0.6, QColor("#0f172a"))
-        bg_grad.setColorAt(0.85, QColor("#111827"))
-        bg_grad.setColorAt(1.0, QColor("#1e293b"))
+        bg_grad.setColorAt(0.0, QColor(COLORS["bg_1"]))
+        bg_grad.setColorAt(0.6, QColor(COLORS["bg_1"]))
+        bg_grad.setColorAt(0.85, QColor(COLORS["bg_2"]))
+        bg_grad.setColorAt(1.0, QColor(COLORS["bg_3"]))
         p.setPen(Qt.PenStyle.NoPen)
         p.setBrush(bg_grad)
         p.drawEllipse(outer)
@@ -236,26 +241,26 @@ class CircularTimer(QWidget):
         center_alpha = int(15 * self._center_glow)
         if center_alpha > 0 and self._remaining <= 0:
             cg = QRadialGradient(cx, cy, radius * 0.5)
-            cg.setColorAt(0.0, QColor(59, 130, 246, center_alpha))
-            cg.setColorAt(0.5, QColor(59, 130, 246, center_alpha // 3))
-            cg.setColorAt(1.0, QColor(59, 130, 246, 0))
+            cg.setColorAt(0.0, QColor(*_ACCENT_RGB, center_alpha))
+            cg.setColorAt(0.5, QColor(*_ACCENT_RGB, center_alpha // 3))
+            cg.setColorAt(1.0, QColor(*_ACCENT_RGB, 0))
             p.setBrush(cg)
             p.setPen(Qt.PenStyle.NoPen)
             p.drawEllipse(QRectF(cx - radius * 0.5, cy - radius * 0.5, radius, radius))
 
-        track_pen = QPen(QColor("#1e293b"), 5)
+        track_pen = QPen(QColor(COLORS["border_soft"]), 5)
         track_pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         p.setPen(track_pen)
         p.setBrush(Qt.BrushStyle.NoBrush)
         p.drawEllipse(inner)
 
         shimmer = QConicalGradient(cx, cy, self._idle_rotation)
-        shimmer.setColorAt(0.0, QColor(59, 130, 246, 0))
-        shimmer.setColorAt(0.15, QColor(59, 130, 246, int(12 * self._idle_glow)))
-        shimmer.setColorAt(0.3, QColor(59, 130, 246, 0))
-        shimmer.setColorAt(0.5, QColor(59, 130, 246, 0))
-        shimmer.setColorAt(0.65, QColor(59, 130, 246, int(8 * self._idle_glow)))
-        shimmer.setColorAt(0.8, QColor(59, 130, 246, 0))
+        shimmer.setColorAt(0.0, QColor(*_ACCENT_RGB, 0))
+        shimmer.setColorAt(0.15, QColor(*_ACCENT_RGB, int(14 * self._idle_glow)))
+        shimmer.setColorAt(0.3, QColor(*_ACCENT_RGB, 0))
+        shimmer.setColorAt(0.5, QColor(*_ACCENT_RGB, 0))
+        shimmer.setColorAt(0.65, QColor(*_ACCENT_RGB, int(10 * self._idle_glow)))
+        shimmer.setColorAt(0.8, QColor(*_ACCENT_RGB, 0))
         shimmer_pen = QPen(shimmer, 3)
         shimmer_pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         p.setPen(shimmer_pen)
@@ -264,7 +269,7 @@ class CircularTimer(QWidget):
 
         idle_glow_alpha = int(15 * self._idle_glow)
         if idle_glow_alpha > 0:
-            ring_color = QColor(59, 130, 246, idle_glow_alpha)
+            ring_color = QColor(*_ACCENT_RGB, idle_glow_alpha)
             for i in range(3, 0, -1):
                 spread = i * 3
                 glow_rect = inner.adjusted(-spread, -spread, spread, spread)
@@ -286,7 +291,7 @@ class CircularTimer(QWidget):
                 dx = cx + dot_r * math.cos(angle)
                 dy = cy + dot_r * math.sin(angle)
                 dot_alpha = int(60 + 100 * self._idle_glow * (0.5 + 0.5 * math.sin(self._orbital_angle * 0.05 + i)))
-                dot_color = QColor(59, 130, 246, dot_alpha)
+                dot_color = QColor(*_ACCENT_RGB, dot_alpha)
                 p.setBrush(dot_color)
                 p.setPen(Qt.PenStyle.NoPen)
                 p.drawEllipse(QRectF(dx - 2, dy - 2, 4, 4))
@@ -307,7 +312,7 @@ class CircularTimer(QWidget):
                 brightness = int(71 + 20 * self._idle_glow)
                 p.setBrush(QColor(brightness, brightness, brightness + 20))
             else:
-                p.setBrush(QColor("#1e293b"))
+                p.setBrush(QColor(COLORS["border_soft"]))
             p.drawEllipse(QRectF(x - size, y - size, size * 2, size * 2))
         p.restore()
 
@@ -321,7 +326,8 @@ class CircularTimer(QWidget):
                 r = radius + 10
                 x = cx + r * math.cos(angle)
                 y = cy + r * math.sin(angle)
-                glow = QColor(255, 80, 80, int(80 * self._glow_intensity))
+                glow = QColor(COLORS["danger_1"])
+                glow.setAlpha(int(80 * self._glow_intensity))
                 p.setPen(Qt.PenStyle.NoPen)
                 p.setBrush(glow)
                 p.drawEllipse(QRectF(x - 4, y - 4, 8, 8))
@@ -359,8 +365,8 @@ class CircularTimer(QWidget):
 
         if self._warning_mode:
             intensity = self._glow_intensity
-            red = int(255 * intensity)
-            glow_color = QColor(red, 50, 50, int(30 * intensity))
+            glow_color = QColor(COLORS["danger_1"])
+            glow_color.setAlpha(int(30 * intensity))
             for i in range(3, 0, -1):
                 spread = i * 6
                 glow_rect = outer.adjusted(-spread, -spread, spread, spread)
@@ -380,33 +386,35 @@ class CircularTimer(QWidget):
         else:
             time_str = f"{minutes:02d}:{seconds:02d}"
 
-        font = QFont("Noto Sans Mono, DejaVu Sans Mono, Liberation Mono, monospace")
+        font = QFont("JetBrains Mono, Noto Sans Mono, DejaVu Sans Mono, monospace")
         font.setPixelSize(int(radius * 0.35))
         font.setWeight(QFont.Weight.ExtraBold)
         p.setFont(font)
 
         if self._warning_mode:
             alpha = int(180 + 75 * self._glow_intensity)
-            p.setPen(QColor(255, 100, 100, alpha))
+            warn = QColor(COLORS["danger_2"])
+            warn.setAlpha(alpha)
+            p.setPen(warn)
         else:
-            p.setPen(QColor("#f8fafc"))
+            p.setPen(QColor(COLORS["text_primary"]))
 
         time_rect = QRectF(outer.x(), outer.y() + outer.height() * 0.30,
                           outer.width(), outer.height() * 0.32)
         p.drawText(time_rect, Qt.AlignmentFlag.AlignCenter, time_str)
 
-        font2 = QFont("Noto Sans Mono, DejaVu Sans Mono, Liberation Mono, monospace")
+        font2 = QFont("JetBrains Mono, Noto Sans Mono, DejaVu Sans Mono, monospace")
         font2.setPixelSize(int(radius * 0.1))
         font2.setWeight(QFont.Weight.DemiBold)
         p.setFont(font2)
 
         if self._remaining <= 0:
             label_alpha = int(80 + 175 * self._ready_pulse)
-            p.setPen(QColor(96, 165, 250, label_alpha))
+            p.setPen(QColor(*_ACCENT_RGB, label_alpha))
         elif self._warning_mode:
-            p.setPen(QColor("#ef4444"))
+            p.setPen(QColor(COLORS["danger_1"]))
         else:
-            p.setPen(QColor("#64748b"))
+            p.setPen(QColor(COLORS["text_muted"]))
 
         label_rect = QRectF(outer.x(), outer.y() + outer.height() * 0.58,
                            outer.width(), outer.height() * 0.12)
@@ -422,7 +430,7 @@ class CircularTimer(QWidget):
 
         if self._remaining <= 0:
             bar_alpha = int(60 + 195 * self._ready_pulse)
-            accent_pen = QPen(QColor(96, 165, 250, bar_alpha), 2)
+            accent_pen = QPen(QColor(*_ACCENT_RGB, bar_alpha), 2)
             p.setPen(accent_pen)
             bar_y = cy + radius * 0.47
             bar_w = radius * 0.35
@@ -434,7 +442,7 @@ class CircularTimer(QWidget):
             dot_y = bar_y
             dot_x1 = cx - bar_w / 2
             dot_x2 = cx + bar_w / 2
-            p.setBrush(QColor(96, 165, 250, bar_alpha))
+            p.setBrush(QColor(*_ACCENT_RGB, bar_alpha))
             p.setPen(Qt.PenStyle.NoPen)
             p.drawEllipse(QRectF(dot_x1 - 1.5, dot_y - 1.5, 3, 3))
             p.drawEllipse(QRectF(dot_x2 - 1.5, dot_y - 1.5, 3, 3))
@@ -443,8 +451,8 @@ class CircularTimer(QWidget):
 
     def _get_color_for_progress(self) -> QColor:
         if self._progress > 0.5:
-            return QColor("#22c55e")
+            return QColor(COLORS["success_1"])
         elif self._progress > 0.2:
-            return QColor("#eab308")
+            return QColor(COLORS["warning"])
         else:
-            return QColor("#ef4444")
+            return QColor(COLORS["danger_1"])
