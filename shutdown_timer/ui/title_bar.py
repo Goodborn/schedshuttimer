@@ -122,11 +122,25 @@ class TitleBar(QWidget):
         self.status_dot.set_armed(armed)
 
     def mousePressEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
-            self._drag_pos = event.globalPosition().toPoint() - self.window().pos()
+        if event.button() != Qt.MouseButton.LeftButton:
+            return
+
+        # Ask the compositor to drive the move directly. This is required
+        # on Wayland (GNOME/KDE Wayland, Hyprland, Sway, ...) - clients
+        # there can't reposition their own top-level window via move(),
+        # so the manual drag below would silently do nothing. It also
+        # works fine on X11, so it's used everywhere it's available.
+        handle = self.window().windowHandle()
+        if handle is not None and handle.startSystemMove():
+            self._drag_pos = None
+            return
+
+        # Fallback for the rare platform where startSystemMove() isn't
+        # supported at all.
+        self._drag_pos = event.globalPosition().toPoint() - self.window().pos()
 
     def mouseMoveEvent(self, event):
-        if self._drag_pos:
+        if self._drag_pos is not None:
             self.window().move(event.globalPosition().toPoint() - self._drag_pos)
 
     def mouseReleaseEvent(self, event):
