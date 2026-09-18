@@ -1,10 +1,14 @@
 import sys
+import math
 import logging
 from pathlib import Path
 
 from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QMessageBox
-from PyQt6.QtGui import QIcon, QAction, QPixmap, QPainter, QColor, QPen
-from PyQt6.QtCore import Qt
+from PyQt6.QtGui import (
+    QIcon, QAction, QPixmap, QPainter, QColor, QPen, QBrush,
+    QLinearGradient, QPainterPath,
+)
+from PyQt6.QtCore import Qt, QRectF, QPointF
 from PyQt6.QtNetwork import QLocalServer, QLocalSocket
 
 from shutdown_timer.ui.main_window import MainWindow
@@ -47,6 +51,9 @@ def _claim_single_instance():
 
 
 def _create_icon() -> QIcon:
+    """Power glyph in a gap-topped ring, matching assets/icon.svg (the
+    desktop-shortcut icon) so the app looks the same in the window
+    decoration/taskbar as it does in the app launcher."""
     size = 64
     pixmap = QPixmap(size, size)
     pixmap.fill(Qt.GlobalColor.transparent)
@@ -54,18 +61,41 @@ def _create_icon() -> QIcon:
     painter = QPainter(pixmap)
     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-    painter.setBrush(QColor(COLORS["accent_0"]))
+    cx, cy = size / 2, size / 2
+
+    badge_grad = QLinearGradient(0, 0, size, size)
+    badge_grad.setColorAt(0.0, QColor(COLORS["bg_3"]))
+    badge_grad.setColorAt(0.35, QColor(COLORS["bg_2"]))
+    badge_grad.setColorAt(0.7, QColor(COLORS["bg_1"]))
+    badge_grad.setColorAt(1.0, QColor(COLORS["bg_0"]))
+    painter.setBrush(QBrush(badge_grad))
+    painter.setPen(QPen(QColor(COLORS["border"]), 1.5))
+    painter.drawEllipse(QRectF(2, 2, size - 4, size - 4))
+
+    ring_grad = QLinearGradient(12, 8, 52, 40)
+    ring_grad.setColorAt(0.0, QColor(COLORS["accent_1"]))
+    ring_grad.setColorAt(0.55, QColor(COLORS["accent_2"]))
+    ring_grad.setColorAt(1.0, QColor(COLORS["cyan"]))
+    ring_pen = QPen(QBrush(ring_grad), 6)
+    ring_pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+
+    # Ring with a 70-degree gap centered on the top, so the power line
+    # can "plug into" it - Qt's arc angles are in 16ths of a degree,
+    # positive = counter-clockwise, 0 = 3 o'clock.
+    ring_rect = QRectF(cx - 18, cy - 18, 36, 36)
+    ring_path = QPainterPath()
+    ring_path.arcMoveTo(ring_rect, 125)
+    ring_path.arcTo(ring_rect, 125, 290)
+    painter.strokePath(ring_path, ring_pen)
+
+    painter.setPen(ring_pen)
+    painter.drawLine(QPointF(cx, 6), QPointF(cx, cy - 2))
+
+    end_x = cx + 18 * math.cos(math.radians(125))
+    end_y = cy - 18 * math.sin(math.radians(125))
+    painter.setBrush(QColor(COLORS["cyan"]))
     painter.setPen(Qt.PenStyle.NoPen)
-    painter.drawEllipse(4, 4, size - 8, size - 8)
-
-    painter.setPen(QPen(QColor("#ffffff"), 3))
-    painter.setBrush(Qt.BrushStyle.NoBrush)
-    cx, cy = size // 2, size // 2
-    painter.drawEllipse(cx - 18, cy - 18, 36, 36)
-
-    painter.setPen(QPen(QColor("#ffffff"), 2.5))
-    painter.drawLine(cx, cy, cx, cy - 12)
-    painter.drawLine(cx, cy, cx + 9, cy + 2)
+    painter.drawEllipse(QRectF(end_x - 2.6, end_y - 2.6, 5.2, 5.2))
 
     painter.end()
     return QIcon(pixmap)
