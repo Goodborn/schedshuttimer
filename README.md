@@ -28,6 +28,16 @@ user account. No `sudo`, no system packages, nothing touches system
 directories — works the same on any distro with Python 3.10+. Run it again
 any time to pick up a `git pull`.
 
+The one exception is Inactivity mode's idle-detection dependency (`swayidle`
+or `xprintidle`, see below) — that has to come from your system package
+manager, not pip. The installer detects whether your session already has a
+working option, and if not, tells you exactly what's missing and offers to
+install it for you (pacman/apt/dnf/zypper/apk/eopkg, whichever it finds) —
+it only touches the system, with `sudo`, if you say yes at that prompt.
+Say no and it still installs everything else normally; you can install that
+package yourself later and Inactivity mode will pick it up with no reinstall
+needed.
+
 ### Arch Linux (AUR)
 
 <!-- Add AUR instructions once published -->

@@ -13,6 +13,8 @@ depends=(
 )
 optdepends=(
   'python-dbus: shutdown via D-Bus instead of the systemctl fallback'
+  'swayidle: inactivity mode on KWin/Hyprland/Sway/Niri and other Wayland compositors'
+  'xprintidle: inactivity mode on X11 sessions (KDE, XFCE, i3, ...)'
 )
 makedepends=(
   'python-build'

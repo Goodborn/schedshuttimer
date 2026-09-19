@@ -48,6 +48,59 @@ command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$
 command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache -f "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
 
 echo
+echo "==> Checking the optional dependency for Inactivity mode"
+
+# Inactivity mode needs a way to read the desktop idle time; which one
+# depends on the session, and unlike everything else this script installs,
+# it isn't something pip can provide - it has to come from the system
+# package manager. Mutter-based desktops (GNOME/Cinnamon/Budgie) need
+# nothing extra (D-Bus call, always present); everything else needs one
+# small package. This never runs anything with sudo unless the user says
+# yes at the prompt below.
+install_system_pkg() {
+    pkg="$1"
+    if command -v pacman >/dev/null 2>&1; then sudo pacman -S --noconfirm "$pkg"
+    elif command -v apt-get >/dev/null 2>&1; then sudo apt-get update -qq && sudo apt-get install -y "$pkg"
+    elif command -v dnf >/dev/null 2>&1; then sudo dnf install -y "$pkg"
+    elif command -v zypper >/dev/null 2>&1; then sudo zypper install -y "$pkg"
+    elif command -v apk >/dev/null 2>&1; then sudo apk add "$pkg"
+    elif command -v eopkg >/dev/null 2>&1; then sudo eopkg install -y "$pkg"
+    else
+        return 1
+    fi
+}
+
+idle_pkg=""
+if command -v swayidle >/dev/null 2>&1 || command -v xprintidle >/dev/null 2>&1; then
+    echo "    Already usable on this session."
+elif [[ "${XDG_CURRENT_DESKTOP:-}" =~ (GNOME|Cinnamon|Budgie|Unity) ]]; then
+    echo "    Already usable on this session (GNOME/Mutter-family D-Bus, no extra package needed)."
+elif [[ -n "${WAYLAND_DISPLAY:-}" ]]; then
+    idle_pkg="swayidle"
+elif [[ -n "${DISPLAY:-}" ]]; then
+    idle_pkg="xprintidle"
+else
+    echo "    No graphical session detected - skipping (re-run this script from your desktop session to pick it up)."
+fi
+
+if [[ -n "$idle_pkg" ]]; then
+    echo "    Not found: '$idle_pkg' (needed for Inactivity mode on this desktop/compositor)."
+    reply="n"
+    if [[ -t 0 && -t 1 ]]; then
+        read -rp "    Install it now via your package manager? This needs sudo. [y/N] " reply || reply="n"
+    fi
+    if [[ "$reply" =~ ^[Yy] ]]; then
+        if install_system_pkg "$idle_pkg"; then
+            echo "    Installed $idle_pkg."
+        else
+            echo "    Couldn't detect a supported package manager - install '$idle_pkg' manually to use Inactivity mode."
+        fi
+    else
+        echo "    Skipped. Install '$idle_pkg' later (e.g. 'sudo pacman -S $idle_pkg') to use Inactivity mode."
+    fi
+fi
+
+echo
 echo "================================================================"
 if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
     echo " Note: $BIN_DIR isn't on your PATH in this shell."
