@@ -200,9 +200,12 @@ class MainWindow(QMainWindow):
         self._idle_mode = mode == "idle"
         if self._idle_mode:
             self._idle_monitor = idle.IdleMonitor()
-            if not self._idle_monitor.is_available():
-                # Same guardrail as above, for the idle-detection side: no
-                # known idle-time source on this desktop/session.
+            # is_available() is a cheap up-front check (binary + session
+            # type); start() can still fail (e.g. the compositor doesn't
+            # actually implement any idle protocol swayidle speaks), so
+            # both are treated as the same "can't track idle time" case.
+            started = self._idle_monitor.is_available() and self._idle_monitor.start(total_seconds)
+            if not started:
                 self._fade_status_text("No idle-detection method found on this system", COLORS["danger_1"])
                 a = shake_window(self.window(), 400)
                 self._anim_refs.append(a)
@@ -210,7 +213,6 @@ class MainWindow(QMainWindow):
                 self._idle_monitor = None
                 self.controls.revert_start()
                 return
-            self._idle_monitor.start(total_seconds)
 
         self._total = total_seconds
         self._remaining = total_seconds

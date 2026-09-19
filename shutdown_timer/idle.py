@@ -20,6 +20,14 @@ _DBUS_SEND_UINT64_RE = re.compile(r"uint64\s+(\d+)")
 # can still tick smoothly without spawning a process 4x/second.
 _POLL_INTERVAL = 1.0
 
+# How long to give swayidle to prove it actually connected to a working idle
+# protocol before we trust it. A compositor that doesn't implement any idle
+# protocol swayidle understands (rare, but not guaranteed across every
+# wlroots/KWin/Mutter version) makes it exit almost immediately with a
+# nonzero code instead of hanging - so a short wait is enough to tell real
+# startup failures apart from it working normally.
+_SWAYIDLE_STARTUP_GRACE = 0.3
+
 _SWAYIDLE_IDLE_MARKER = "__shutdown_timer_idle__"
 _SWAYIDLE_RESUME_MARKER = "__shutdown_timer_resume__"
 
@@ -127,13 +135,16 @@ class IdleMonitor:
     def is_available(self) -> bool:
         return self._kind is not None
 
-    def start(self, threshold_seconds: float):
+    def start(self, threshold_seconds: float) -> bool:
+        """Arms the monitor. Returns False if the chosen backend turned out
+        not to actually work (caller should treat this like unavailable)."""
         self._threshold = threshold_seconds
         self._base_time = None
         if self._kind == "swayidle":
-            self._start_swayidle(threshold_seconds)
+            return self._start_swayidle(threshold_seconds)
+        return self._kind is not None
 
-    def _start_swayidle(self, threshold_seconds: float):
+    def _start_swayidle(self, threshold_seconds: float) -> bool:
         seconds = max(1, int(round(threshold_seconds)))
         try:
             self._process = subprocess.Popen(
@@ -142,16 +153,32 @@ class IdleMonitor:
                     "timeout", str(seconds), f"echo {_SWAYIDLE_IDLE_MARKER}",
                     "resume", f"echo {_SWAYIDLE_RESUME_MARKER}",
                 ],
-                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
             )
             os.set_blocking(self._process.stdout.fileno(), False)
         except Exception as e:
             log.warning("Failed to start swayidle: %s", e)
             self._process = None
             self._kind = None
-            return
+            return False
+
+        # Give it a moment to fail fast (e.g. "compositor doesn't support
+        # any known idle protocol") rather than trusting a bare Popen
+        # success, which only means the binary launched.
+        time.sleep(_SWAYIDLE_STARTUP_GRACE)
+        if self._process.poll() is not None:
+            stderr = self._process.stderr.read().strip()
+            log.warning(
+                "swayidle exited immediately (code %s): %s",
+                self._process.returncode, stderr or "<no output>",
+            )
+            self._process = None
+            self._kind = None
+            return False
+
         self._resumed_at = time.monotonic()
         self._triggered = False
+        return True
 
     def stop(self):
         if self._process is None:

@@ -77,11 +77,23 @@ The D-Bus path (1–2) covers systemd **and** non-systemd distros that ship `elo
 
 **Guardrails:** if no shutdown mechanism can be found at all, the app refuses to arm the timer and shows a warning immediately instead of counting down to nothing. If every mechanism fails when the countdown actually hits zero (e.g. permissions changed mid-countdown), the app aborts cleanly, restores itself from the tray, and shows an error — it never silently pretends to shut down.
 
+Inactivity mode uses the same layered approach for detecting idle time, trying each of these in order:
+
+1. GNOME/Mutter's `IdleMonitor` D-Bus interface — also implemented by Mutter forks (Cinnamon's Muffin, Budgie)
+2. `swayidle` — speaks the `ext-idle-notify-v1` / wlr-idle Wayland protocols, covering KWin (Plasma 6.1+), Hyprland, Sway, Niri, and other wlroots compositors
+3. `xprintidle` — X11 only, for KDE/XFCE/i3/etc. when not running Wayland
+
+If none of those are available or working, or if the chosen one fails to actually start (e.g. `swayidle` launches but the compositor rejects it), the app refuses to arm inactivity mode and shows a warning instead of a timer that will never trigger — same guardrail as the shutdown mechanism check above.
+
 ## Dependencies
 
 - Python 3.10+
 - PyQt6 (installed automatically by `install.sh` into its own venv)
 - dbus-python (optional — only needed for the D-Bus shutdown path instead of `systemctl`)
+- For **inactivity mode** (optional — only needed to use that mode, install whichever matches your session):
+  - Wayland (KWin/Plasma 6.1+, Hyprland, Sway, Niri, …): `swayidle`
+  - GNOME/Mutter-based (GNOME, Cinnamon, Budgie): none — uses D-Bus directly
+  - X11 (KDE, XFCE, i3, etc.): `xprintidle`
 
 ## Building
 
