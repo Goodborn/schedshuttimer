@@ -6,6 +6,7 @@ A simple shutdown scheduler for Linux, dressed up with a premium animated dark U
 
 - **Countdown mode** — set hours, minutes, seconds with quick presets (5m, 15m, 30m, 1h)
 - **Schedule mode** — pick a specific time for the system to shut down
+- **Inactivity mode** — shut down after a set period of no user activity, via GNOME/Mutter, swayidle, or xprintidle
 - **System tray** — minimizes to tray with a custom icon and remaining time tooltip
 - **Dark theme** — rich gradient-based dark UI with pill-shaped mode tabs and glass-morphism container
 
