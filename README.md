@@ -38,6 +38,18 @@ password same as running that install command yourself would. If none of
 those package managers are found, it tells you which package to install by
 hand instead; Inactivity mode picks it up with no reinstall needed.
 
+### Uninstalling
+
+```bash
+./uninstall.sh
+```
+
+Removes the venv, launcher, desktop shortcut, and icon. If `install.sh`
+auto-installed `swayidle`/`xprintidle` for you, this removes that too —
+but only a package `install.sh` itself installed; it never touches a copy
+that was already on your system for some other reason, and your package
+manager still refuses to remove it if something else now depends on it.
+
 ### Arch Linux (AUR)
 
 <!-- Add AUR instructions once published -->

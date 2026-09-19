@@ -91,6 +91,9 @@ if [[ -n "$idle_pkg" ]]; then
     echo "    Installing it now - your package manager will prompt for your sudo password."
     if install_system_pkg "$idle_pkg"; then
         echo "    Installed $idle_pkg."
+        # Recorded so uninstall.sh only removes it if *we* put it there -
+        # never touches a copy that already existed for some other reason.
+        echo "$idle_pkg" >> "$SHARE_DIR/.auto_installed_deps"
     else
         echo "    Couldn't install it automatically (no supported package manager found, or the"
         echo "    install failed) - install '$idle_pkg' manually to use Inactivity mode, e.g.:"
