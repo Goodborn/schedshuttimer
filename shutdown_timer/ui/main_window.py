@@ -1,3 +1,4 @@
+import logging
 import time
 
 from PyQt6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve, pyqtSignal
@@ -14,12 +15,15 @@ from shutdown_timer.animations import (
     slide_in_from_bottom, bounce_in, shake_window,
 )
 from shutdown_timer.shutdown import shutdown, is_available
+from shutdown_timer import idle
 from shutdown_timer.style import COLORS
 
 # Grace period between the countdown hitting zero and the actual shutdown
 # call, purely so the "shutting down..." animation is visible. Must stay
 # cancellable right up to the last moment (see _cancel_timer).
 _SHUTDOWN_GRACE_MS = 1200
+
+log = logging.getLogger(__name__)
 
 
 class MainWindow(QMainWindow):
@@ -52,6 +56,8 @@ class MainWindow(QMainWindow):
         self._remaining = 0
         self._total = 0
         self._deadline = None  # wall-clock time.time() the shutdown is due
+        self._idle_mode = False
+        self._idle_monitor = None
         self._timer = QTimer(self)
         self._timer.setInterval(250)
         self._timer.timeout.connect(self._tick)
@@ -176,7 +182,7 @@ class MainWindow(QMainWindow):
         fade_out.start()
         self._status_fade_anim = fade_out
 
-    def _start_timer(self, total_seconds: int):
+    def _start_timer(self, total_seconds: int, mode: str = "countdown"):
         if total_seconds <= 0:
             return
 
@@ -188,19 +194,36 @@ class MainWindow(QMainWindow):
             self._fade_status_text("No shutdown method found on this system", COLORS["danger_1"])
             a = shake_window(self.window(), 400)
             self._anim_refs.append(a)
+            self.controls.revert_start()
             return
+
+        self._idle_mode = mode == "idle"
+        if self._idle_mode:
+            self._idle_monitor = idle.IdleMonitor()
+            if not self._idle_monitor.is_available():
+                # Same guardrail as above, for the idle-detection side: no
+                # known idle-time source on this desktop/session.
+                self._fade_status_text("No idle-detection method found on this system", COLORS["danger_1"])
+                a = shake_window(self.window(), 400)
+                self._anim_refs.append(a)
+                self._idle_mode = False
+                self._idle_monitor = None
+                self.controls.revert_start()
+                return
+            self._idle_monitor.start(total_seconds)
 
         self._total = total_seconds
         self._remaining = total_seconds
         # Wall-clock deadline rather than a pure tick-decrement: stays
         # accurate even if the event loop stalls or the system suspends
         # and resumes mid-countdown (real time keeps passing either way).
+        # Unused in idle mode, where remaining comes from the idle monitor.
         self._deadline = time.time() + total_seconds
         self._warning_shown = False
         self.timer_widget.set_total(total_seconds)
         self.timer_widget.set_remaining(total_seconds)
 
-        self._fade_status_text("Shutting down in...")
+        self._fade_status_text("Shutting down after inactivity..." if self._idle_mode else "Shutting down in...")
         self._timer.start()
         self.title_bar.set_armed(True)
         self.timer_started.emit()
@@ -211,6 +234,7 @@ class MainWindow(QMainWindow):
     def _cancel_timer(self):
         self._timer.stop()
         self._shutdown_pending_timer.stop()
+        self._stop_idle_monitor()
         self._remaining = 0
         self._deadline = None
         self._warning_shown = False
@@ -220,8 +244,24 @@ class MainWindow(QMainWindow):
         self.title_bar.set_armed(False)
         self.timer_cancelled.emit()
 
+    def _stop_idle_monitor(self):
+        if self._idle_monitor is not None:
+            self._idle_monitor.stop()
+            self._idle_monitor = None
+        self._idle_mode = False
+
     def _tick(self):
-        self._remaining = max(0, int(round(self._deadline - time.time())))
+        if self._idle_mode:
+            remaining = self._idle_monitor.remaining()
+            if remaining is None:
+                # The idle backend stopped working mid-run (e.g. swayidle
+                # crashed) - stay conservative and hold position rather
+                # than guessing, but let the user know something's wrong.
+                log.warning("Idle-time source stopped responding; timer held")
+                return
+            self._remaining = int(round(remaining))
+        else:
+            self._remaining = max(0, int(round(self._deadline - time.time())))
         self.timer_widget.set_remaining(self._remaining)
 
         self._pulse_timer_tick()
@@ -257,6 +297,8 @@ class MainWindow(QMainWindow):
         self._pulse_anim.start()
 
     def _do_shutdown(self):
+        self._stop_idle_monitor()
+
         if shutdown():
             self.timer_finished.emit()
             return
@@ -273,6 +315,12 @@ class MainWindow(QMainWindow):
         a = shake_window(self.window(), 600)
         self._anim_refs.append(a)
         self.shutdown_failed.emit()
+
+    def cleanup(self):
+        """Called on real app quit (see app.py's aboutToQuit) - without
+        this, an active idle-mode session would leak its swayidle
+        subprocess as an orphan once this process exits."""
+        self._stop_idle_monitor()
 
     def get_remaining(self) -> int:
         return self._remaining

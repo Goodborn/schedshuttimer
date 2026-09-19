@@ -210,6 +210,7 @@ def run() -> int:
     window.shutdown_failed.connect(on_shutdown_failed)
 
     window.show()
+    app.aboutToQuit.connect(window.cleanup)
 
     log.info("Shutdown Timer started (v%s)", __version__)
     return app.exec()

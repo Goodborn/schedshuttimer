@@ -116,12 +116,12 @@ QPushButton#preset-btn:pressed {{
 
 /* ── Mode selector (pill tabs) ───────────────────────── */
 
-QPushButton#mode-countdown, QPushButton#mode-schedule {{
+QPushButton#mode-countdown, QPushButton#mode-schedule, QPushButton#mode-idle {{
     background-color: transparent;
     color: {COLORS["text_muted"]};
     border: none;
     border-radius: 16px;
-    padding: 6px 20px;
+    padding: 6px 14px;
     font-size: 9pt;
     font-weight: 700;
     text-transform: uppercase;
@@ -129,13 +129,13 @@ QPushButton#mode-countdown, QPushButton#mode-schedule {{
     min-height: 28px;
 }}
 
-QPushButton#mode-countdown:checked, QPushButton#mode-schedule:checked {{
+QPushButton#mode-countdown:checked, QPushButton#mode-schedule:checked, QPushButton#mode-idle:checked {{
     background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
         stop:0 {COLORS["accent_0"]}, stop:1 {COLORS["accent_2"]});
     color: #ffffff;
 }}
 
-QPushButton#mode-countdown:hover:!checked, QPushButton#mode-schedule:hover:!checked {{
+QPushButton#mode-countdown:hover:!checked, QPushButton#mode-schedule:hover:!checked, QPushButton#mode-idle:hover:!checked {{
     color: {COLORS["text_secondary"]};
     background-color: {COLORS["border_soft"]};
 }}
