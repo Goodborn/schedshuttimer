@@ -55,8 +55,11 @@ echo "==> Checking the optional dependency for Inactivity mode"
 # it isn't something pip can provide - it has to come from the system
 # package manager. Mutter-based desktops (GNOME/Cinnamon/Budgie) need
 # nothing extra (D-Bus call, always present); everything else needs one
-# small package. This never runs anything with sudo unless the user says
-# yes at the prompt below.
+# small package, which this installs automatically via whatever package
+# manager it finds. That's the one point where this script touches the
+# system instead of just $HOME - your package manager's own sudo prompt
+# is the confirmation for that, same as running the install command
+# yourself would be.
 install_system_pkg() {
     pkg="$1"
     if command -v pacman >/dev/null 2>&1; then sudo pacman -S --noconfirm "$pkg"
@@ -85,18 +88,13 @@ fi
 
 if [[ -n "$idle_pkg" ]]; then
     echo "    Not found: '$idle_pkg' (needed for Inactivity mode on this desktop/compositor)."
-    reply="n"
-    if [[ -t 0 && -t 1 ]]; then
-        read -rp "    Install it now via your package manager? This needs sudo. [y/N] " reply || reply="n"
-    fi
-    if [[ "$reply" =~ ^[Yy] ]]; then
-        if install_system_pkg "$idle_pkg"; then
-            echo "    Installed $idle_pkg."
-        else
-            echo "    Couldn't detect a supported package manager - install '$idle_pkg' manually to use Inactivity mode."
-        fi
+    echo "    Installing it now - your package manager will prompt for your sudo password."
+    if install_system_pkg "$idle_pkg"; then
+        echo "    Installed $idle_pkg."
     else
-        echo "    Skipped. Install '$idle_pkg' later (e.g. 'sudo pacman -S $idle_pkg') to use Inactivity mode."
+        echo "    Couldn't install it automatically (no supported package manager found, or the"
+        echo "    install failed) - install '$idle_pkg' manually to use Inactivity mode, e.g.:"
+        echo "        sudo pacman -S $idle_pkg"
     fi
 fi
 

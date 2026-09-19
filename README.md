@@ -31,12 +31,12 @@ any time to pick up a `git pull`.
 The one exception is Inactivity mode's idle-detection dependency (`swayidle`
 or `xprintidle`, see below) — that has to come from your system package
 manager, not pip. The installer detects whether your session already has a
-working option, and if not, tells you exactly what's missing and offers to
-install it for you (pacman/apt/dnf/zypper/apk/eopkg, whichever it finds) —
-it only touches the system, with `sudo`, if you say yes at that prompt.
-Say no and it still installs everything else normally; you can install that
-package yourself later and Inactivity mode will pick it up with no reinstall
-needed.
+working option, and if not, installs the right one for your
+desktop/compositor automatically (via pacman/apt/dnf/zypper/apk/eopkg,
+whichever it finds) — your package manager will prompt for your `sudo`
+password same as running that install command yourself would. If none of
+those package managers are found, it tells you which package to install by
+hand instead; Inactivity mode picks it up with no reinstall needed.
 
 ### Arch Linux (AUR)
 
